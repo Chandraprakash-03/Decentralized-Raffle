@@ -1,0 +1,33 @@
+/* header.module.css */
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	padding: 20px 40px;
+	position: fixed;
+	top: 0;
+	left: 0;
+	background: #0b0c10;
+	z-index: 1000;
+}
+
+.logo {
+	font-size: 1.5rem;
+	font-weight: bold;
+	color: white;
+}
+
+.loginButton {
+	background: #9085c8;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 15px;
+	color: white;
+	cursor: pointer;
+	transition: 0.3s;
+}
+
+.loginButton:hover {
+	background: #7269a3;
+}

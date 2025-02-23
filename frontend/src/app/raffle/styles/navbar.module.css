@@ -1,0 +1,29 @@
+/* navbar.module.css */
+.navbar {
+	background: #2d2f31;
+	width: 80%;
+	max-width: 600px;
+	border-radius: 15px;
+	display: flex;
+	justify-content: space-around;
+	padding: 15px;
+	position: fixed;
+	bottom: 20px;
+}
+
+.navItem {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	color: #b0b3b8;
+	cursor: pointer;
+	transition: color 0.3s;
+}
+
+.navItem:hover {
+	color: white;
+}
+
+.active {
+	color: white;
+}

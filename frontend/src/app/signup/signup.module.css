@@ -1,0 +1,148 @@
+.container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	background-color: #000;
+}
+
+.signupBox {
+	background-color: #1e1f24;
+	padding: 40px;
+	border-radius: 24px;
+	width: 460px;
+	text-align: center;
+}
+
+.title {
+	font-size: 24px;
+	font-weight: 400;
+	margin-bottom: 32px;
+	color: #fff;
+}
+
+.googleBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	border: 1px solid #2c2d33;
+	padding: 12px;
+	border-radius: 12px;
+	background-color: transparent;
+	color: white;
+	font-size: 16px;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.googleBtn:hover {
+	background-color: #2c2d33;
+}
+
+.googleBtn img {
+	width: 24px;
+	height: 24px;
+}
+
+.orDivider {
+	margin: 24px 0;
+	color: #fff;
+}
+
+.inputWrapper {
+	position: relative;
+	width: 100%;
+}
+
+.inputLabel {
+	display: block;
+	text-align: left;
+	margin-bottom: 8px;
+	color: #fff;
+}
+
+.inputField {
+	width: 100%;
+	padding: 12px;
+	border: 2px solid #7f7caf;
+	border-radius: 12px;
+	background-color: transparent;
+	color: white;
+	font-size: 16px;
+}
+
+.inputField:focus {
+	outline: none;
+	border-color: #9795c7;
+}
+
+/* Button Container */
+.buttonContainer {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+	margin-top: 20px;
+}
+
+/* Adjust buttons for step 2 */
+.buttonContainer.twoButtons {
+	justify-content: space-between;
+	gap: 15px;
+}
+
+/* Back Button */
+.backBtn {
+	background-color: #444;
+	color: white;
+	border: none;
+	padding: 12px;
+	width: 48%;
+	border-radius: 10px;
+	cursor: pointer;
+	font-size: 16px;
+	text-align: center;
+}
+
+.backBtn:hover {
+	background-color: #333;
+}
+
+/* Next/Signup Button */
+.nextBtn {
+	background-color: #7f7caf;
+	color: white;
+	border: none;
+	padding: 12px;
+	width: 100%;
+	max-width: 200px;
+	border-radius: 10px;
+	cursor: pointer;
+	font-size: 16px;
+	text-align: center;
+}
+
+.nextBtn:hover {
+	background-color: #6a58a8;
+}
+
+/* In Step 2, reduce the width of Signup button */
+.buttonContainer.twoButtons .nextBtn {
+	width: 48%;
+}
+
+/* Login Link */
+.loginLink {
+	margin-top: 24px;
+	color: #848484;
+}
+
+.loginLink a {
+	color: #7f7caf;
+	text-decoration: none;
+}
+
+.loginLink a:hover {
+	text-decoration: underline;
+}

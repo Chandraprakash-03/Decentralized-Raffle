@@ -16,7 +16,7 @@ export default function Login() {
 
         {/* Google Sign-In Button (Stays the Same) */}
         <button className={styles.googleBtn}>
-          <img src="/file.svg" alt="Google" />
+          <img src="/google.svg" alt="Google" />
           Continue with Google
         </button>
 
@@ -86,7 +86,7 @@ export default function Login() {
         </div>
 
         <div className={styles.signupLink}>
-          Don't have an Account? <a href="#">Create One</a>
+          Don't have an Account? <a href="/signup">Create One</a>
         </div>
       </div>
     </div>
