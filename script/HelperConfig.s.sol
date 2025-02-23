@@ -84,9 +84,9 @@ contract HelperConfig is CodeConstants, Script {
         returns (NetworkConfig memory mainnetNetworkConfig)
     {
         mainnetNetworkConfig = NetworkConfig({
-            subscriptionId: 0, // If left as 0, our scripts will create one!
+            subscriptionId: 0,
             gasLane: 0x9fe0eebf5e446e3c998ec9bb19951541aee00bb90ea201ae456421a2ded86805,
-            automationUpdateInterval: 30, // 30 seconds
+            automationUpdateInterval: 300,
             raffleEntranceFee: 0.01 ether,
             callbackGasLimit: 500000, // 500,000 gas
             vrfCoordinatorV2_5: 0x271682DEB8C4E0901D1a1550aD2e64D568E69909,
@@ -103,7 +103,7 @@ contract HelperConfig is CodeConstants, Script {
         sepoliaNetworkConfig = NetworkConfig({
             subscriptionId: 46790287580655844956567475006593769535733149645090336968445462865156341538958,
             gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            automationUpdateInterval: 30, // 30 seconds
+            automationUpdateInterval: 300, // 5 Minutes
             raffleEntranceFee: 0.01 ether,
             callbackGasLimit: 500000, // 500,000 gas
             vrfCoordinatorV2_5: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
@@ -133,7 +133,7 @@ contract HelperConfig is CodeConstants, Script {
         localNetworkConfig = NetworkConfig({
             subscriptionId: subscriptionId,
             gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-            automationUpdateInterval: 30,
+            automationUpdateInterval: 300,
             raffleEntranceFee: 0.01 ether,
             callbackGasLimit: 500000,
             vrfCoordinatorV2_5: address(vrfCoordinatorV2_5Mock),

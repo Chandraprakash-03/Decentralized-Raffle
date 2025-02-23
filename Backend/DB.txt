@@ -1,0 +1,7 @@
+host : raffle-pgsql-decentralized-raffle.h.aivencloud.com,
+port: 11817,
+user: avnadmin,
+password: AVNS_ZHryRO4KhjSu9nWj8-Q,
+database name: defaultdb
+
+con-string:postgres://avnadmin:AVNS_ZHryRO4KhjSu9nWj8-Q@raffle-pgsql-decentralized-raffle.h.aivencloud.com:11817/defaultdb?sslmode=require
