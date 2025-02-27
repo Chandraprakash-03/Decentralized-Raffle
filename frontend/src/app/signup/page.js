@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./signup.module.css";
+import { useRouter } from "next/navigation";
 
 export default function Signup() {
+    const router = useRouter();
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -73,7 +75,7 @@ export default function Signup() {
 
                     <motion.button
                         className={styles.nextBtn}
-                        onClick={() => (step === 1 ? setStep(2) : alert("Signup Clicked"))}
+                        onClick={() => (step === 1 ? setStep(2) : router.push("/raffle"))}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
@@ -85,6 +87,6 @@ export default function Signup() {
                     Already have an Account? <a href="/login">Login</a>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -1,4 +1,5 @@
 .container {
+	font-family: "Wix Madefor Display";
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -22,6 +23,7 @@
 }
 
 .googleBtn {
+	font-family: "Wix Madefor Display";
 	display: flex;
 	align-items: center;
 	justify-content: center;

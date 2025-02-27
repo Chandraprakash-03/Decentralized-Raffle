@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 
 export default function Login() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -77,7 +79,7 @@ export default function Login() {
 
           <motion.button
             className={styles.nextBtn}
-            onClick={() => (step === 1 ? setStep(2) : alert("Login Clicked"))}
+            onClick={() => (step === 1 ? setStep(2) : router.push("/raffle"))}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

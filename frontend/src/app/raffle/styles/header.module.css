@@ -8,7 +8,7 @@
 	position: fixed;
 	top: 0;
 	left: 0;
-	background: #0b0c10;
+	background: #0a0908;
 	z-index: 1000;
 }
 
@@ -19,15 +19,22 @@
 }
 
 .loginButton {
-	background: #9085c8;
-	border: none;
-	padding: 10px 20px;
-	border-radius: 15px;
+	background: #6d5b96;
 	color: white;
+	height: 40px;
+	width: 120px;
+	padding: 0; /* Remove padding */
+	border: none;
+	border-radius: 16px;
 	cursor: pointer;
-	transition: 0.3s;
+	font-size: 16px;
+	transition: background 0.3s;
+	text-decoration: none;
+	text-align: center;
+	display: inline-block;
+	line-height: 40px; /* Match the height */
 }
 
 .loginButton:hover {
-	background: #7269a3;
+	background: #5a4a7b;
 }

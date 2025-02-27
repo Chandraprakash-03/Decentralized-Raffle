@@ -1,8 +1,8 @@
-/* navbar.module.css */
 .navbar {
-	background: #2d2f31;
+	background: rgba(127, 124, 175, 0.5);
+	border: 3px solid #7f7caf;
 	width: 80%;
-	max-width: 600px;
+	max-width: 400px;
 	border-radius: 15px;
 	display: flex;
 	justify-content: space-around;
@@ -15,15 +15,15 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	color: #b0b3b8;
 	cursor: pointer;
-	transition: color 0.3s;
+	transition: all 0.3s;
 }
 
-.navItem:hover {
-	color: white;
+.navItem img {
+	opacity: 1; /* Makes icons slightly faded by default */
+	transition: opacity 0.3s;
 }
 
-.active {
-	color: white;
+.navItem:hover img {
+	opacity: 1; /* Full opacity on hover */
 }
