@@ -6,6 +6,8 @@ import { contractAddress, contractAbi } from "../../../../utils/constants";
 import styles from "../styles/mainSection.module.css";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { auth } from "../../../../utils/firebase"; // Firebase Auth
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 const Timer = memo(({ seconds, hasParticipants }) => {
     const formatTime = (seconds) => {
@@ -23,7 +25,7 @@ const Timer = memo(({ seconds, hasParticipants }) => {
     );
 });
 
-// Home Section (Memoized)
+// Home Section
 const HomeSection = memo(({ timeLeft, hasParticipants, prizePool, entryFee, participants, walletAddress, isLoading, onConnect, onEnterRaffle }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -62,7 +64,7 @@ const HomeSection = memo(({ timeLeft, hasParticipants, prizePool, entryFee, part
     </motion.div>
 ));
 
-// Winners Section (Memoized)
+// Winners Section
 const WinnersSection = memo(({ winners }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -85,8 +87,8 @@ const WinnersSection = memo(({ winners }) => (
     </motion.div>
 ));
 
-// Profile Section (Memoized)
-const ProfileSection = memo(({ walletAddress, transactions }) => (
+// Profile Section with Logout Button
+const ProfileSection = memo(({ walletAddress, transactions, onLogout, userEmail }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -98,28 +100,42 @@ const ProfileSection = memo(({ walletAddress, transactions }) => (
             <h2 className={styles.sectionTitle}>Profile</h2>
             <div className={styles.profileInfo}>
                 <div className={styles.detailsRow}>
+                    <span>Email</span>
+                    <span>{userEmail || "Not logged in"}</span>
+                </div>
+                <div className={styles.detailsRow}>
                     <span>Wallet Address</span>
-                    <span>{walletAddress || "Not connected"}</span>
+                    <span>{walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "Connect"}</span>
                 </div>
                 <div className={styles.detailsRow}>
                     <span>Total Entries</span>
                     <span>{transactions?.length || 0}</span>
                 </div>
             </div>
+            <button className={styles.logoutButton} onClick={onLogout}>
+                Logout
+            </button>
         </div>
     </motion.div>
 ));
 
 export default function MainSection({ activeSection }) {
-    const [timeLeft, setTimeLeft] = useState(() => {
-        const savedTime = localStorage.getItem("raffleTimer");
-        return savedTime ? parseInt(savedTime, 10) : 300;
-    }); // 5 minutes in seconds
+    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
     const [walletAddress, setWalletAddress] = useState("");
     const [prizePool, setPrizePool] = useState("0.00 ETH");
     const [entryFee, setEntryFee] = useState("0.01 ETH");
     const [participants, setParticipants] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
+
+    // Fetch Firebase User
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUserEmail(user ? user.email : "");
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     // Fetch Contract Data
     const fetchContractData = useCallback(async () => {
@@ -138,8 +154,7 @@ export default function MainSection({ activeSection }) {
             const participantCount = await contract.getNumberOfPlayers();
             setParticipants(Number(participantCount));
 
-            // Start timer only if at least one participant exists
-            if (Number(participantCount) > 0 && !localStorage.getItem("raffleTimerStart")) {
+            if (participantCount > 0 && !localStorage.getItem("raffleTimerStart")) {
                 setTimeLeft(300);
                 localStorage.setItem("raffleTimerStart", Date.now().toString());
             }
@@ -147,37 +162,6 @@ export default function MainSection({ activeSection }) {
             console.error("Error fetching contract data:", error);
         }
     }, []);
-
-    // Timer Effect (Runs Only When Participants > 0)
-    useEffect(() => {
-        const storedStartTime = localStorage.getItem("raffleTimerStart");
-        if (!storedStartTime || participants === 0) return;
-
-        const elapsedTime = Math.floor((Date.now() - parseInt(storedStartTime, 10)) / 1000);
-        const remainingTime = Math.max(300 - elapsedTime, 0);
-        setTimeLeft(remainingTime);
-
-        const timerId = setInterval(() => {
-            setTimeLeft((prevTime) => {
-                if (prevTime <= 0) {
-                    clearInterval(timerId);
-                    localStorage.removeItem("raffleTimerStart");
-                    return 0;
-                }
-                localStorage.setItem("raffleTimer", prevTime - 1);
-                return prevTime - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timerId);
-    }, [participants]);
-
-    // Fetch Data When Wallet Connects
-    useEffect(() => {
-        if (walletAddress) {
-            fetchContractData();
-        }
-    }, [walletAddress]);
 
     // Handle Wallet Connection
     const handleConnectWallet = useCallback(async () => {
@@ -194,34 +178,34 @@ export default function MainSection({ activeSection }) {
             }
 
             setIsLoading(true);
-
-            if (!window.ethereum) {
-                toast.error("MetaMask is not installed!");
-                return;
-            }
-
             const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();
             const contract = new ethers.Contract(contractAddress, contractAbi, signer);
 
             const entranceFee = await contract.getEntranceFee();
-
             const tx = await contract.enterRaffle({ value: entranceFee });
             await tx.wait();
 
             toast.success("You have successfully entered the raffle!");
-
-            localStorage.setItem("raffleTimerStart", Date.now().toString());
-
-            // Refresh contract data after entering
             fetchContractData();
         } catch (error) {
-            console.error("Error entering raffle:", error);
             toast.error("Transaction failed! Check the console for details.");
         } finally {
             setIsLoading(false);
         }
     }, [walletAddress, fetchContractData]);
+
+    // Handle Logout
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            setUserEmail("");
+            toast.success("Logged out successfully!");
+        } catch (error) {
+            toast.error("Error logging out. Try again.");
+        }
+    };
+
     return (
         <main className={styles.mainContainer}>
             <ToastContainer position="top-right" autoClose={3000} />
@@ -249,6 +233,8 @@ export default function MainSection({ activeSection }) {
                     <ProfileSection
                         walletAddress={walletAddress}
                         transactions={[]}
+                        onLogout={handleLogout}
+                        userEmail={userEmail}
                     />
                 )}
             </AnimatePresence>

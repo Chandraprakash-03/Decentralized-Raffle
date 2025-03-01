@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
+    "firebase": "^11.4.0",
     "framer-motion": "^12.4.7",
     "next": "15.1.7",
     "react": "^19.0.0",
