@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="Analytics">
+  <g fill="#e3dfff" class="color000000 svgShape">
+    <path d="M21,20H4V3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,0-2Z" fill="#e3dfff" class="color000000 svgShape"></path>
+    <path d="M8 17V12a1 1 0 0 0-2 0v5a1 1 0 0 0 2 0zM12 17V8a1 1 0 0 0-2 0v9a1 1 0 0 0 2 0zM16 17V6a1 1 0 0 0-2 0V17a1 1 0 0 0 2 0zM20 17V4a1 1 0 0 0-2 0V17a1 1 0 0 0 2 0z" fill="#e3dfff" class="color000000 svgShape"></path>
+  </g>
+</svg>

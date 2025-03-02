@@ -28,12 +28,12 @@ export default function Navbar({ setActiveSection, activeSection }) {
                 />
             </div>
             <div
-                onClick={() => setActiveSection("faq")}
-                className={`${styles.navItem} ${activeSection === "faq" ? styles.active : ""}`}
+                onClick={() => setActiveSection("analytics")}
+                className={`${styles.navItem} ${activeSection === "analytics" ? styles.active : ""}`}
             >
                 <Image
-                    src="/Question.svg"
-                    alt="FAQ"
+                    src="/analytics.svg"
+                    alt="Analytics"
                     width={24}
                     height={24}
                 />

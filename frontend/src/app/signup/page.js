@@ -19,9 +19,19 @@ export default function Signup() {
     const handleGoogleSignup = async () => {
         try {
             setIsLoading(true);
-            await signInWithGoogle();
+            const userCredential = await signInWithGoogle();
+            const user = userCredential.email;
+            // console.log(userCredential)
+
+            // Send user data to backend
+            await fetch("http://localhost:5000/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: user }),
+            });
+
             toast.success("Signup Successful!");
-            router.push("/raffle");
+            router.push("/raffle"); // Redirect to wallet connection page
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -29,7 +39,7 @@ export default function Signup() {
         }
     };
 
-    // Handle Email/Password Signup
+
     const handleEmailSignup = async () => {
         if (!email || !password) {
             toast.error("Email and password are required!");
@@ -38,9 +48,20 @@ export default function Signup() {
 
         try {
             setIsLoading(true);
-            await signUpWithEmail(email, password);
+            const userCredential = await signUpWithEmail(email, password);
+            const user = userCredential.email;
+
+            console.log(userCredential);
+
+            // Send user data to the backend
+            await fetch("http://localhost:5000/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: user }),
+            });
+
             toast.success("Signup Successful!");
-            router.push("/raffle");
+            router.push("/raffle"); // Redirect to wallet connection page
         } catch (error) {
             if (error.code === "auth/email-already-in-use") {
                 toast.error("Email is already in use. Try logging in.");
@@ -53,6 +74,7 @@ export default function Signup() {
             setIsLoading(false);
         }
     };
+
 
     return (
         <div className={styles.container}>

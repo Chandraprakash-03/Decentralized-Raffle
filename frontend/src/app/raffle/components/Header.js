@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import styles from "../styles/header.module.css";
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "../../../../utils/firebase"; // Firebase auth instance
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -20,7 +21,7 @@ export default function Header() {
 
     return (
         <header className={styles.header}>
-            <h2 className={styles.logo}>Cipher Draw</h2>
+            <Image src="/logo.svg" alt="Cipher Draw" width={80} height={80} className={styles.logo} />
 
             {/* Hide Login button when user is logged in */}
             {!user && (

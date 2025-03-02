@@ -121,3 +121,10 @@
 	color: #ffffff;
 	opacity: 0.8;
 }
+.transactionsList {
+	max-height: 120px;
+	overflow-y: auto;
+	border: 1px solid #7f7caf;
+	padding: 10px;
+	border-radius: 8px;
+}
