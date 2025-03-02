@@ -24,7 +24,7 @@ export default function Signup() {
             // console.log(userCredential)
 
             // Send user data to backend
-            await fetch("http://localhost:5000/signup", {
+            await fetch("https://decentralized-raffle.onrender.com/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: user }),
@@ -54,7 +54,7 @@ export default function Signup() {
             console.log(userCredential);
 
             // Send user data to the backend
-            await fetch("http://localhost:5000/signup", {
+            await fetch("https://decentralized-raffle.onrender.com/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: user }),

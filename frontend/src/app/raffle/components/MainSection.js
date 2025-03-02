@@ -224,7 +224,7 @@ export default function MainSection({ activeSection }) {
             }
 
             // Send wallet address to backend for mapping
-            const res = await fetch("http://localhost:5000/map-wallet", {
+            const res = await fetch("https://decentralized-raffle.onrender.com/map-wallet", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: userEmail, wallet_address: wallet.address }),
@@ -264,7 +264,7 @@ export default function MainSection({ activeSection }) {
             await tx.wait();
 
             // Send transaction details to backend
-            await fetch("http://localhost:5000/log-transaction", {
+            await fetch("https://decentralized-raffle.onrender.com/log-transaction", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -299,7 +299,7 @@ export default function MainSection({ activeSection }) {
         const fetchTransactions = async () => {
 
             try {
-                const res = await fetch(`http://localhost:5000/transactions/${walletAddress}`);
+                const res = await fetch(`https://decentralized-raffle.onrender.com/transactions/${walletAddress}`);
                 const data = await res.json();
                 console.log(data)
                 if (res.ok) {

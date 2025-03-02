@@ -15,9 +15,9 @@ export default function AnalyticsSection() {
         const fetchAnalytics = async () => {
             try {
                 const [participantsRes, ethRes, topParticipantsRes] = await Promise.all([
-                    fetch("http://localhost:5000/analytics/participants"),
-                    fetch("http://localhost:5000/analytics/eth-collected"),
-                    fetch("http://localhost:5000/analytics/top-participants")
+                    fetch("https://decentralized-raffle.onrender.com/analytics/participants"),
+                    fetch("https://decentralized-raffle.onrender.com/analytics/eth-collected"),
+                    fetch("https://decentralized-raffle.onrender.com/analytics/top-participants")
                 ]);
 
                 const participants = await participantsRes.json();
