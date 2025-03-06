@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { ethers } from "ethers";
 import { motion, AnimatePresence } from "framer-motion";
 import { connectWallet } from "../../../../utils/connectWallet";
-import { contractAddress, contractAbi } from "../../../../utils/constants";
+import { contractAddress, contractAbi, apiUrl } from "../../../../utils/constants";
 import styles from "../styles/mainSection.module.css";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -224,7 +224,7 @@ export default function MainSection({ activeSection }) {
             }
 
             // Send wallet address to backend for mapping
-            const res = await fetch("https://decentralized-raffle.onrender.com/map-wallet", {
+            const res = await fetch(`${apiUrl}/map-wallet`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: userEmail, wallet_address: wallet.address }),
@@ -264,7 +264,7 @@ export default function MainSection({ activeSection }) {
             await tx.wait();
 
             // Send transaction details to backend
-            await fetch("https://decentralized-raffle.onrender.com/log-transaction", {
+            await fetch(`${apiUrl}/log-transaction`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -299,7 +299,7 @@ export default function MainSection({ activeSection }) {
         const fetchTransactions = async () => {
 
             try {
-                const res = await fetch(`https://decentralized-raffle.onrender.com/transactions/${walletAddress}`);
+                const res = await fetch(`${apiUrl}/transactions/${walletAddress}`);
                 const data = await res.json();
                 console.log(data)
                 if (res.ok) {

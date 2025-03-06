@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Line, Bar } from "react-chartjs-2";
 import "chart.js/auto";
 import styles from "../styles/analytics.module.css";
+import { apiUrl } from "../../../../utils/constants"
 
 export default function AnalyticsSection() {
     const [participantsData, setParticipantsData] = useState([]);
@@ -15,9 +16,9 @@ export default function AnalyticsSection() {
         const fetchAnalytics = async () => {
             try {
                 const [participantsRes, ethRes, topParticipantsRes] = await Promise.all([
-                    fetch("https://decentralized-raffle.onrender.com/analytics/participants"),
-                    fetch("https://decentralized-raffle.onrender.com/analytics/eth-collected"),
-                    fetch("https://decentralized-raffle.onrender.com/analytics/top-participants")
+                    fetch(`${apiUrl}/analytics/participants`),
+                    fetch(`${apiUrl}/analytics/eth-collected`),
+                    fetch(`${apiUrl}/analytics/top-participants`)
                 ]);
 
                 const participants = await participantsRes.json();

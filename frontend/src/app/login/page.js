@@ -50,27 +50,40 @@ export default function Login() {
         <div className={styles.inputWrapper}>
           <AnimatePresence mode="wait">
             {step === 1 ? (
-              <motion.div key="email">
+              <motion.div
+                key="email"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+                exit={{ opacity: 0, x: 20, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+              >
                 <label className={styles.inputLabel}>Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={styles.inputField}
+                  required
                 />
               </motion.div>
             ) : (
-              <motion.div key="password">
+              <motion.div
+                key="password"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+                exit={{ opacity: 0, x: 20, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+              >
                 <label className={styles.inputLabel}>Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={styles.inputField}
+                  required
                 />
               </motion.div>
             )}
           </AnimatePresence>
+
         </div>
 
         <div className={styles.buttonContainer}>

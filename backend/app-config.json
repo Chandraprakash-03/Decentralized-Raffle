@@ -1,0 +1,10 @@
+{
+	"command": "node server.js",
+	"build_path": "E:\\Decentralized-Raffle\\backend",
+	"stack": "node18",
+	"env_variables": {
+		"DATABASE_URL": "postgres://avnadmin:AVNS_ZHryRO4KhjSu9nWj8-Q@raffle-pgsql-decentralized-raffle.h.aivencloud.com:11817/defaultdb"
+	},
+	"memory": 256,
+	"scripts": {}
+}

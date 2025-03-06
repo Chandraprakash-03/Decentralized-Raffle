@@ -6,6 +6,7 @@ import styles from "./signup.module.css";
 import { useRouter } from "next/navigation";
 import { signInWithGoogle, signUpWithEmail } from "../../../utils/firebase";
 import { toast, ToastContainer } from "react-toastify";
+import { apiUrl } from "../../../utils/constants"
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Signup() {
@@ -15,6 +16,7 @@ export default function Signup() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    console.log(apiUrl)
     // Handle Google Signup
     const handleGoogleSignup = async () => {
         try {
@@ -24,7 +26,7 @@ export default function Signup() {
             // console.log(userCredential)
 
             // Send user data to backend
-            await fetch("https://decentralized-raffle.onrender.com/signup", {
+            await fetch(`${apiUrl}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: user }),
@@ -54,7 +56,7 @@ export default function Signup() {
             console.log(userCredential);
 
             // Send user data to the backend
-            await fetch("https://decentralized-raffle.onrender.com/signup", {
+            await fetch(`${apiUrl}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: user }),
