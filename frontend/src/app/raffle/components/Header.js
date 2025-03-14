@@ -21,7 +21,7 @@ export default function Header() {
 
     return (
         <header className={styles.header}>
-            <Image src="/logo.svg" alt="Cipher Draw" width={80} height={80} className={styles.logo} />
+            <Image src="/logo.svg" alt="Cipher Draw" width={100} height={100} className={styles.logo} />
 
             {/* Hide Login button when user is logged in */}
             {!user && (
