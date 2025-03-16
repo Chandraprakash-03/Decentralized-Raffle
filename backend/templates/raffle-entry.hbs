@@ -1,0 +1,23 @@
+<html>
+	<head>
+		<style>
+			.container { font-family: Arial, sans-serif; max-width: 600px; margin:
+			auto; padding: 20px; background: #111; color: #fff; text-align: center;
+			border-radius: 10px; } .button { background: #ff9900; color: white;
+			padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h2>🎟 Raffle Entry Confirmation 🎟</h2>
+			<p>Hello {{user}},</p>
+			<p>Thank you for entering the raffle! Your entry of
+				<strong>{{amount}} ETH</strong>
+				has been successfully recorded.</p>
+			<a href="{{raffle_url}}" class="button">View Raffle</a>
+			<p>Good luck! 🍀</p>
+			<p style="color: #888; font-size: 12px;">This is an automated email from
+				CipherDraw Raffle. Do not reply.</p>
+		</div>
+	</body>
+</html>

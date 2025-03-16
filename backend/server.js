@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { sendEmail } = require("./emailService");
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
@@ -69,19 +70,8 @@ app.post("/log-transaction", async (req, res) => {
     try {
         const { wallet_address, tx_hash, amount, type } = req.body;
 
-        if (!wallet_address || !tx_hash || !amount || !type) {
-            return res.status(400).json({ error: "All fields are required" });
-        }
-
-        // Ensure the transaction type is valid
-        const validTypes = ["entry", "win"];
-        if (!validTypes.includes(type)) {
-            return res.status(400).json({ error: "Invalid transaction type" });
-        }
-
-        // Get user ID from wallet address
         const userResult = await pool.query(
-            "SELECT id FROM users WHERE wallet_address = $1",
+            "SELECT id, email FROM users WHERE wallet_address = $1",
             [wallet_address]
         );
 
@@ -89,20 +79,28 @@ app.post("/log-transaction", async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        const user_id = userResult.rows[0].id;
+        const email = userResult.rows[0].email;
 
-        // Insert transaction into database
-        const result = await pool.query(
+        await pool.query(
             "INSERT INTO transactions (user_id, tx_hash, amount, type) VALUES ($1, $2, $3, $4) RETURNING *",
-            [user_id, tx_hash, amount, type]
+            [userResult.rows[0].id, tx_hash, amount, type]
         );
 
-        res.status(201).json({ message: "Transaction logged successfully", transaction: result.rows[0] });
+        if (type === "entry") {
+            sendEmail(email, "🎟 Raffle Entry Confirmation", "raffle-entry", {
+                user: email,
+                amount: amount,
+                raffle_url: "https://your-raffle-site.com"
+            });
+        }
+
+        res.status(201).json({ message: "Transaction logged successfully" });
     } catch (error) {
         console.error("Transaction logging error:", error);
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 app.get("/participants", async (req, res) => {
     try {
@@ -129,6 +127,36 @@ app.get("/winners", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+app.post("/declare-winner", async (req, res) => {
+    try {
+        const { raffle_id, user_id, prize_amount } = req.body;
+
+        const userResult = await pool.query("SELECT email FROM users WHERE id = $1", [user_id]);
+        if (userResult.rowCount === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const email = userResult.rows[0].email;
+
+        await pool.query(
+            "INSERT INTO winners (raffle_id, user_id, prize_amount) VALUES ($1, $2, $3)",
+            [raffle_id, user_id, prize_amount]
+        );
+
+        sendEmail(email, "🏆 Congratulations! You Won!", "winner-notification", {
+            user: email,
+            prize_amount,
+            raffle_url: "https://your-raffle-site.com/claim-prize"
+        });
+
+        res.status(201).json({ message: "Winner declared successfully" });
+    } catch (error) {
+        console.error("Error declaring winner:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 
 app.get("/transactions/:wallet_address", async (req, res) => {
     try {
