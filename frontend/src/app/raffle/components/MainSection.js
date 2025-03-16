@@ -132,8 +132,6 @@ const ProfileSection = memo(({ walletAddress, transactions = [], onLogout, userE
     </motion.div>
 ));
 
-
-
 export default function MainSection({ activeSection }) {
     const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
     const [walletAddress, setWalletAddress] = useState("");
@@ -143,42 +141,8 @@ export default function MainSection({ activeSection }) {
     const [isLoading, setIsLoading] = useState(false);
     const [userEmail, setUserEmail] = useState("");
     const [transactions, setTransactions] = useState([]);
-
-    // Fetch Firebase User
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUserEmail(user ? user.email : "");
-        });
-
-        return () => unsubscribe();
-    }, []);
-
-    useEffect(() => {
-        const storedStartTime = localStorage.getItem("raffleTimerStart");
-
-        if (!storedStartTime || participants === 0) {
-            setTimeLeft(300); // Default time when no participants
-            return;
-        }
-
-        const elapsedTime = Math.floor((Date.now() - parseInt(storedStartTime, 10)) / 1000);
-        const remainingTime = Math.max(300 - elapsedTime, 0);
-        setTimeLeft(remainingTime);
-
-        const timerId = setInterval(() => {
-            setTimeLeft((prevTime) => {
-                if (prevTime <= 0) {
-                    clearInterval(timerId);
-                    localStorage.removeItem("raffleTimerStart");
-                    return 0;
-                }
-                return prevTime - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timerId);
-    }, [participants]); // Run effect when participants change
-
+    const [raffleEndTime, setRaffleEndTime] = useState(null);
+    const [timerIntervalId, setTimerIntervalId] = useState(null);
 
     // Fetch Contract Data
     const fetchContractData = useCallback(async () => {
@@ -197,14 +161,112 @@ export default function MainSection({ activeSection }) {
             const participantCount = await contract.getNumberOfPlayers();
             setParticipants(Number(participantCount));
 
-            if (participantCount > 0 && !localStorage.getItem("raffleTimerStart")) {
-                setTimeLeft(300);
-                localStorage.setItem("raffleTimerStart", Date.now().toString());
-            }
+            // Update the global timer after fetching contract data
+            setupGlobalTimer();
         } catch (error) {
             console.error("Error fetching contract data:", error);
         }
+    }, []); // Remove setupGlobalTimer from dependencies to avoid circular dependency
+
+    // Setup synchronized timer
+    const setupGlobalTimer = useCallback(async () => {
+        try {
+            // Clear any existing timer
+            if (timerIntervalId) {
+                clearInterval(timerIntervalId);
+            }
+
+            // Fetch the current raffle end time from the server
+            const response = await fetch(`${apiUrl}/raffle-status`);
+            const data = await response.json();
+
+            if (response.ok) {
+                const { endTime, isActive, participants } = data;
+
+                if (isActive && endTime) {
+                    // Convert server timestamp to local Date object
+                    const endTimeDate = new Date(endTime);
+                    setRaffleEndTime(endTimeDate);
+                    setParticipants(participants);
+
+                    // Define the timer update function
+                    const updateTimer = () => {
+                        const now = new Date();
+                        const secondsLeft = Math.max(0, Math.floor((endTimeDate - now) / 1000));
+                        setTimeLeft(secondsLeft);
+
+                        // If timer has reached zero, refresh contract data
+                        if (secondsLeft <= 0) {
+                            clearInterval(intervalId);
+                            fetchContractData();
+                        }
+                    };
+
+                    // Update immediately to avoid initial delay
+                    updateTimer();
+
+                    // Set up interval to update timer every second
+                    const intervalId = setInterval(updateTimer, 1000);
+                    setTimerIntervalId(intervalId);
+                } else {
+                    // No active raffle, show default time
+                    setTimeLeft(300);
+                    setParticipants(participants);
+                }
+            }
+        } catch (error) {
+            console.error("Error setting up global timer:", error);
+            toast.error("Failed to synchronize timer!");
+        }
+    }, [timerIntervalId, fetchContractData]);
+
+    // Fix circular dependency by setting up fetchContractData dependency
+    useEffect(() => {
+        // Update the fetchContractData function to use the current setupGlobalTimer
+        fetchContractData.current = async () => {
+            try {
+                if (!window.ethereum) return;
+
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                const contract = new ethers.Contract(contractAddress, contractAbi, provider);
+
+                const poolValue = await contract.getPrizePool();
+                setPrizePool(ethers.formatEther(poolValue) + " ETH");
+
+                const fee = await contract.getEntranceFee();
+                setEntryFee(ethers.formatEther(fee) + " ETH");
+
+                const participantCount = await contract.getNumberOfPlayers();
+                setParticipants(Number(participantCount));
+
+                // Update the global timer after fetching contract data
+                setupGlobalTimer();
+            } catch (error) {
+                console.error("Error fetching contract data:", error);
+            }
+        };
+    }, [setupGlobalTimer]);
+
+    // Fetch Firebase User
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUserEmail(user ? user.email : "");
+        });
+
+        return () => unsubscribe();
     }, []);
+
+    // Initial data fetch
+    useEffect(() => {
+        fetchContractData();
+
+        // Clean up interval on unmount
+        return () => {
+            if (timerIntervalId) {
+                clearInterval(timerIntervalId);
+            }
+        };
+    }, [fetchContractData, timerIntervalId]);
 
     // Handle Wallet Connection
     const handleConnectWallet = useCallback(async () => {
@@ -236,15 +298,12 @@ export default function MainSection({ activeSection }) {
             } else {
                 toast.error(data.error || "Failed to map wallet!");
             }
-            fetchContractData()
+            fetchContractData();
         } catch (error) {
             console.error("Wallet connection error:", error);
             toast.error("Error connecting wallet!");
         }
     }, [userEmail, fetchContractData]);
-
-
-
 
     // Handle Enter Raffle
     const handleEnterRaffle = useCallback(async () => {
@@ -277,13 +336,7 @@ export default function MainSection({ activeSection }) {
 
             toast.success("You have successfully entered the raffle!");
 
-            // Ensure timer starts only if it’s not running
-            if (!localStorage.getItem("raffleTimerStart")) {
-                setTimeLeft(300);
-                localStorage.setItem("raffleTimerStart", Date.now().toString());
-            }
-
-            // Refresh contract data (prize pool & participants)
+            // Refresh contract data and timer
             fetchContractData();
         } catch (error) {
             console.error("Transaction error:", error);
@@ -297,11 +350,9 @@ export default function MainSection({ activeSection }) {
         if (!walletAddress) return;
 
         const fetchTransactions = async () => {
-
             try {
                 const res = await fetch(`${apiUrl}/transactions/${walletAddress}`);
                 const data = await res.json();
-                console.log(data)
                 if (res.ok) {
                     setTransactions(data.transactions);
                 } else {

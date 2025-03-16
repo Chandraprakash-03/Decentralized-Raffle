@@ -15,12 +15,124 @@ const pool = new Pool({
     }
 });
 
+// Global raffle state
+let raffleState = {
+    isActive: false,
+    endTime: null,
+    participants: 0,
+    raffleId: null
+};
+
 // Test DB Connection
 pool.connect()
     .then(() => console.log("Connected to PostgreSQL"))
     .catch((err) => console.error("Connection error:", err));
 
+// Initialize raffle state from database
+const initializeRaffleState = async () => {
+    try {
+        // Check if there's an active raffle
+        const result = await pool.query(
+            "SELECT id, end_time, participants FROM raffles WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1"
+        );
+
+        if (result.rowCount > 0) {
+            const activeRaffle = result.rows[0];
+            raffleState = {
+                isActive: true,
+                endTime: activeRaffle.end_time,
+                participants: activeRaffle.participants,
+                raffleId: activeRaffle.id
+            };
+            console.log("Initialized active raffle:", raffleState);
+        } else {
+            console.log("No active raffle found");
+        }
+    } catch (error) {
+        console.error("Error initializing raffle state:", error);
+    }
+};
+
+// Call this function when server starts
+initializeRaffleState();
+
+// Create a new raffle or reset current one
+const createOrResetRaffle = async (participants = 1) => {
+    try {
+        // Set end time to 5 minutes (300 seconds) from now
+        const endTime = new Date(Date.now() + 300000);
+
+        // Update any existing active raffle to inactive
+        await pool.query("UPDATE raffles SET is_active = FALSE WHERE is_active = TRUE");
+
+        // Create new raffle
+        const result = await pool.query(
+            "INSERT INTO raffles (end_time, participants, is_active) VALUES ($1, $2, TRUE) RETURNING id",
+            [endTime, participants]
+        );
+
+        // Update global state
+        raffleState = {
+            isActive: true,
+            endTime: endTime,
+            participants: participants,
+            raffleId: result.rows[0].id
+        };
+
+        console.log("Created new raffle:", raffleState);
+
+        // Set up timer to end the raffle
+        setTimeout(async () => {
+            try {
+                // Mark raffle as inactive
+                await pool.query("UPDATE raffles SET is_active = FALSE WHERE id = $1", [raffleState.raffleId]);
+
+                // Reset state
+                raffleState = {
+                    isActive: false,
+                    endTime: null,
+                    participants: 0,
+                    raffleId: null
+                };
+
+                console.log("Raffle ended automatically");
+
+                // Here you would typically trigger the winner selection logic
+                // For now, we'll just reset the state
+            } catch (error) {
+                console.error("Error ending raffle:", error);
+            }
+        }, 300000); // 5 minutes (300000 ms)
+
+        return result.rows[0].id;
+    } catch (error) {
+        console.error("Error creating/resetting raffle:", error);
+        throw error;
+    }
+};
+
+// Check if a raffle needs to be created
+const checkAndCreateRaffle = async () => {
+    if (!raffleState.isActive) {
+        return await createOrResetRaffle();
+    } else {
+        // Update participants count
+        await pool.query(
+            "UPDATE raffles SET participants = $1 WHERE id = $2",
+            [raffleState.participants + 1, raffleState.raffleId]
+        );
+        raffleState.participants += 1;
+        return raffleState.raffleId;
+    }
+};
+
+// Base routes
 app.get("/", (req, res) => res.send("Backend is running!"));
+
+// Get current raffle status
+app.get("/raffle-status", (req, res) => {
+    res.status(200).json(raffleState);
+});
 
 app.post("/signup", async (req, res) => {
     try {
@@ -80,10 +192,18 @@ app.post("/log-transaction", async (req, res) => {
         }
 
         const email = userResult.rows[0].email;
+        const userId = userResult.rows[0].id;
 
+        // Create or update raffle if this is an entry transaction
+        let raffleId = null;
+        if (type === "entry") {
+            raffleId = await checkAndCreateRaffle();
+        }
+
+        // Insert transaction
         await pool.query(
-            "INSERT INTO transactions (user_id, tx_hash, amount, type) VALUES ($1, $2, $3, $4) RETURNING *",
-            [userResult.rows[0].id, tx_hash, amount, type]
+            "INSERT INTO transactions (user_id, tx_hash, amount, type, raffle_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            [userId, tx_hash, amount, type, raffleId]
         );
 
         if (type === "entry") {
@@ -94,13 +214,15 @@ app.post("/log-transaction", async (req, res) => {
             });
         }
 
-        res.status(201).json({ message: "Transaction logged successfully" });
+        res.status(201).json({
+            message: "Transaction logged successfully",
+            raffleStatus: raffleState
+        });
     } catch (error) {
         console.error("Transaction logging error:", error);
         res.status(500).json({ error: "Server error" });
     }
 });
-
 
 app.get("/participants", async (req, res) => {
     try {
@@ -156,7 +278,6 @@ app.post("/declare-winner", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
 
 app.get("/transactions/:wallet_address", async (req, res) => {
     try {
