@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, memo, useRef } from "react";
 import { ethers } from "ethers";
 import { motion, AnimatePresence } from "framer-motion";
 import { connectWallet } from "../../../../utils/connectWallet";
@@ -10,7 +10,7 @@ import { auth } from "../../../../utils/firebase"; // Firebase Auth
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import AnalyticsSection from "./AnalyticsSection";
 
-const Timer = memo(({ seconds, hasParticipants }) => {
+const Timer = memo(({ seconds }) => {
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -20,14 +20,14 @@ const Timer = memo(({ seconds, hasParticipants }) => {
     return (
         <div className={styles.timerWrapper}>
             <div className={styles.timer}>
-                TIME LEFT: {hasParticipants ? formatTime(seconds) : "05:00"}
+                TIME LEFT: {formatTime(seconds)}
             </div>
         </div>
     );
 });
 
 // Home Section
-const HomeSection = memo(({ timeLeft, hasParticipants, prizePool, entryFee, participants, walletAddress, isLoading, onConnect, onEnterRaffle }) => (
+const HomeSection = memo(({ timeLeft, prizePool, entryFee, participants, walletAddress, isLoading, onConnect, onEnterRaffle }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -35,7 +35,7 @@ const HomeSection = memo(({ timeLeft, hasParticipants, prizePool, entryFee, part
         transition={{ duration: 0.3 }}
         className={styles.details}
     >
-        <Timer seconds={timeLeft} hasParticipants={hasParticipants} />
+        <Timer seconds={timeLeft} />
         <div className={styles.statsContainer}>
             <div className={styles.detailsRow}>
                 <span>Prize Pool</span>
@@ -133,7 +133,7 @@ const ProfileSection = memo(({ walletAddress, transactions = [], onLogout, userE
 ));
 
 export default function MainSection({ activeSection }) {
-    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
+    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes default
     const [walletAddress, setWalletAddress] = useState("");
     const [prizePool, setPrizePool] = useState("0.00 ETH");
     const [entryFee, setEntryFee] = useState("0.01 ETH");
@@ -141,13 +141,20 @@ export default function MainSection({ activeSection }) {
     const [isLoading, setIsLoading] = useState(false);
     const [userEmail, setUserEmail] = useState("");
     const [transactions, setTransactions] = useState([]);
-    const [raffleEndTime, setRaffleEndTime] = useState(null);
-    const [timerIntervalId, setTimerIntervalId] = useState(null);
+    const timerRef = useRef(null);
+    const isTimerInitialized = useRef(false);
+    const isDataFetching = useRef(false);
 
     // Fetch Contract Data
     const fetchContractData = useCallback(async () => {
+        if (isDataFetching.current) return;
+        isDataFetching.current = true;
+
         try {
-            if (!window.ethereum) return;
+            if (!window.ethereum) {
+                isDataFetching.current = false;
+                return;
+            }
 
             const provider = new ethers.BrowserProvider(window.ethereum);
             const contract = new ethers.Contract(contractAddress, contractAbi, provider);
@@ -161,91 +168,74 @@ export default function MainSection({ activeSection }) {
             const participantCount = await contract.getNumberOfPlayers();
             setParticipants(Number(participantCount));
 
-            // Update the global timer after fetching contract data
-            setupGlobalTimer();
+            // Fetch raffle status from backend
+            await fetchRaffleStatus();
         } catch (error) {
             console.error("Error fetching contract data:", error);
+        } finally {
+            isDataFetching.current = false;
         }
-    }, []); // Remove setupGlobalTimer from dependencies to avoid circular dependency
+    }, []);
 
-    // Setup synchronized timer
-    const setupGlobalTimer = useCallback(async () => {
+    // Fetch raffle status and set up timer
+    const fetchRaffleStatus = useCallback(async () => {
         try {
-            // Clear any existing timer
-            if (timerIntervalId) {
-                clearInterval(timerIntervalId);
-            }
-
-            // Fetch the current raffle end time from the server
             const response = await fetch(`${apiUrl}/raffle-status`);
             const data = await response.json();
 
             if (response.ok) {
-                const { endTime, isActive, participants } = data;
+                console.log(data)
+                const { endTime, isActive, participants, amount } = data;
+                setParticipants(participants);
+
+                // setPrizePool(amount + " ETH");
 
                 if (isActive && endTime) {
-                    // Convert server timestamp to local Date object
                     const endTimeDate = new Date(endTime);
-                    setRaffleEndTime(endTimeDate);
-                    setParticipants(participants);
-
-                    // Define the timer update function
-                    const updateTimer = () => {
-                        const now = new Date();
-                        const secondsLeft = Math.max(0, Math.floor((endTimeDate - now) / 1000));
-                        setTimeLeft(secondsLeft);
-
-                        // If timer has reached zero, refresh contract data
-                        if (secondsLeft <= 0) {
-                            clearInterval(intervalId);
-                            fetchContractData();
-                        }
-                    };
-
-                    // Update immediately to avoid initial delay
-                    updateTimer();
-
-                    // Set up interval to update timer every second
-                    const intervalId = setInterval(updateTimer, 1000);
-                    setTimerIntervalId(intervalId);
+                    startTimer(endTimeDate);
                 } else {
-                    // No active raffle, show default time
-                    setTimeLeft(300);
-                    setParticipants(participants);
+                    // If no active raffle, maintain the default time
+                    if (!isTimerInitialized.current) {
+                        setTimeLeft(300);
+                        isTimerInitialized.current = true;
+                    }
                 }
             }
         } catch (error) {
-            console.error("Error setting up global timer:", error);
-            toast.error("Failed to synchronize timer!");
-        }
-    }, [timerIntervalId, fetchContractData]);
-
-    // Fix circular dependency by setting up fetchContractData dependency
-    useEffect(() => {
-        // Update the fetchContractData function to use the current setupGlobalTimer
-        fetchContractData.current = async () => {
-            try {
-                if (!window.ethereum) return;
-
-                const provider = new ethers.BrowserProvider(window.ethereum);
-                const contract = new ethers.Contract(contractAddress, contractAbi, provider);
-
-                const poolValue = await contract.getPrizePool();
-                setPrizePool(ethers.formatEther(poolValue) + " ETH");
-
-                const fee = await contract.getEntranceFee();
-                setEntryFee(ethers.formatEther(fee) + " ETH");
-
-                const participantCount = await contract.getNumberOfPlayers();
-                setParticipants(Number(participantCount));
-
-                // Update the global timer after fetching contract data
-                setupGlobalTimer();
-            } catch (error) {
-                console.error("Error fetching contract data:", error);
+            console.error("Error fetching raffle status:", error);
+            // Keep the current time if there's an error
+            if (!isTimerInitialized.current) {
+                setTimeLeft(300);
+                isTimerInitialized.current = true;
             }
-        };
-    }, [setupGlobalTimer]);
+        }
+    }, []);
+
+    // Start timer with end time
+    const startTimer = useCallback((endTime) => {
+        // Clear any existing timer
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+
+        // Calculate initial time
+        const now = new Date();
+        const secondsLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+        setTimeLeft(secondsLeft);
+        isTimerInitialized.current = true;
+
+        // Set up the timer
+        timerRef.current = setInterval(() => {
+            const now = new Date();
+            const secondsLeft = Math.max(0, Math.floor((endTime - now) / 1000));
+            setTimeLeft(secondsLeft);
+
+            if (secondsLeft <= 0) {
+                clearInterval(timerRef.current);
+                fetchContractData();
+            }
+        }, 1000);
+    }, [fetchContractData]);
 
     // Fetch Firebase User
     useEffect(() => {
@@ -258,15 +248,20 @@ export default function MainSection({ activeSection }) {
 
     // Initial data fetch
     useEffect(() => {
+        // Set initial default time
+        setTimeLeft(300);
+        isTimerInitialized.current = true;
+
+        // Fetch contract data and set up timer
         fetchContractData();
 
-        // Clean up interval on unmount
+        // Clean up timer on unmount
         return () => {
-            if (timerIntervalId) {
-                clearInterval(timerIntervalId);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
             }
         };
-    }, [fetchContractData, timerIntervalId]);
+    }, [fetchContractData]);
 
     // Handle Wallet Connection
     const handleConnectWallet = useCallback(async () => {
@@ -346,6 +341,7 @@ export default function MainSection({ activeSection }) {
         }
     }, [walletAddress, fetchContractData]);
 
+    // Fetch transactions when wallet address changes
     useEffect(() => {
         if (!walletAddress) return;
 
@@ -385,7 +381,6 @@ export default function MainSection({ activeSection }) {
                 {activeSection === "home" && (
                     <HomeSection
                         timeLeft={timeLeft}
-                        hasParticipants={participants > 0}
                         prizePool={prizePool}
                         entryFee={entryFee}
                         participants={participants}

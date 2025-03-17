@@ -20,7 +20,8 @@ let raffleState = {
     isActive: false,
     endTime: null,
     participants: 0,
-    raffleId: null
+    raffleId: null,
+    amount: 0
 };
 
 // Test DB Connection
@@ -33,7 +34,7 @@ const initializeRaffleState = async () => {
     try {
         // Check if there's an active raffle
         const result = await pool.query(
-            "SELECT id, end_time, participants FROM raffles WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1"
+            "SELECT id, end_time, participants, amount FROM raffles WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1"
         );
 
         if (result.rowCount > 0) {
@@ -42,7 +43,8 @@ const initializeRaffleState = async () => {
                 isActive: true,
                 endTime: activeRaffle.end_time,
                 participants: activeRaffle.participants,
-                raffleId: activeRaffle.id
+                raffleId: activeRaffle.id,
+                amount: activeRaffle.amount
             };
             console.log("Initialized active raffle:", raffleState);
         } else {
@@ -57,18 +59,20 @@ const initializeRaffleState = async () => {
 initializeRaffleState();
 
 // Create a new raffle or reset current one
-const createOrResetRaffle = async (participants = 1) => {
+const createOrResetRaffle = async (participants = 1, amount = 0) => {
     try {
         // Set end time to 5 minutes (300 seconds) from now
         const endTime = new Date(Date.now() + 300000);
+
+        // const amount = 0;
 
         // Update any existing active raffle to inactive
         await pool.query("UPDATE raffles SET is_active = FALSE WHERE is_active = TRUE");
 
         // Create new raffle
         const result = await pool.query(
-            "INSERT INTO raffles (end_time, participants, is_active) VALUES ($1, $2, TRUE) RETURNING id",
-            [endTime, participants]
+            "INSERT INTO raffles (end_time, participants, is_active, amount) VALUES ($1, $2, TRUE, $3) RETURNING id",
+            [endTime, participants, amount]
         );
 
         // Update global state
@@ -76,7 +80,8 @@ const createOrResetRaffle = async (participants = 1) => {
             isActive: true,
             endTime: endTime,
             participants: participants,
-            raffleId: result.rows[0].id
+            raffleId: result.rows[0].id,
+            prizePool: amount
         };
 
         console.log("Created new raffle:", raffleState);
@@ -112,9 +117,9 @@ const createOrResetRaffle = async (participants = 1) => {
 };
 
 // Check if a raffle needs to be created
-const checkAndCreateRaffle = async () => {
+const checkAndCreateRaffle = async (amount = 0) => {
     if (!raffleState.isActive) {
-        return await createOrResetRaffle();
+        return await createOrResetRaffle(1, amount);
     } else {
         // Update participants count
         await pool.query(
@@ -197,7 +202,7 @@ app.post("/log-transaction", async (req, res) => {
         // Create or update raffle if this is an entry transaction
         let raffleId = null;
         if (type === "entry") {
-            raffleId = await checkAndCreateRaffle();
+            raffleId = await checkAndCreateRaffle(amount); // Pass the amount to checkAndCreateRaffle
         }
 
         // Insert transaction
