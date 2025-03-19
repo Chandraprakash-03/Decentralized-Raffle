@@ -366,11 +366,43 @@ a:hover {
 	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 	border: 1px solid rgba(108, 0, 255, 0.2);
 	transition: transform var(--transition-speed);
+	background: rgba(255, 255, 255, 0.1); /* Transparent background */
+	backdrop-filter: blur(10px); /* Blur effect */
+	-webkit-backdrop-filter: blur(10px); /* For Safari */
+	border: 1px solid rgba(255, 255, 255, 0.18); /* Subtle border */
+	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); /* Soft shadow */
+	border-radius: 24px; /* Rounded corners */
+	padding: 1.5rem;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.statCard:before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(255, 255, 255, 0.2),
+		transparent
+	);
+	transition: 0.5s;
+	pointer-events: none;
 }
 
 .statCard:hover {
 	transform: translateY(-5px);
-	border-color: rgba(108, 0, 255, 0.5);
+	box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.2);
+	border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.statCard:hover:before {
+	left: 100%;
 }
 
 .statCard h3 {
@@ -473,27 +505,72 @@ a:hover {
 	text-align: center;
 	border: 1px solid rgba(108, 0, 255, 0.1);
 	transition: transform var(--transition-speed);
+	background: rgba(255, 255, 255, 0.1); /* Transparent background */
+	backdrop-filter: blur(10px); /* Blur effect */
+	-webkit-backdrop-filter: blur(10px); /* For Safari */
+	border: 1px solid rgba(255, 255, 255, 0.18); /* Subtle border */
+	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); /* Soft shadow */
+	border-radius: 24px; /* Rounded corners */
+	padding: 2rem;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.featureCard:before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(255, 255, 255, 0.2),
+		transparent
+	);
+	transition: 0.5s;
+	pointer-events: none;
 }
 
 .featureCard:hover {
 	transform: translateY(-5px);
-	border-color: rgba(108, 0, 255, 0.3);
+	box-shadow: 0 10px 40px 0 rgba(31, 38, 135, 0.2);
+	border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.featureCard:hover:before {
+	left: 100%;
+}
+
+.featureCard h3 {
+	position: relative;
+	color: rgba(255, 255, 255, 0.9);
+	margin-top: 1.5rem;
+	margin-bottom: 1rem;
+	font-weight: 600;
+}
+
+.featureCard p {
+	position: relative;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 0.95rem;
+	line-height: 1.5;
 }
 
 .featureIcon {
-	width: 60px;
-	height: 60px;
-	margin: 0 auto 1.5rem;
+	position: relative;
+	background-color: rgba(255, 255, 255, 0.1);
 	border-radius: 50%;
-	background: linear-gradient(
-		135deg,
-		var(--primary-dark),
-		var(--primary-color)
-	);
+	padding: 1rem;
+	width: 3rem;
+	height: 3rem;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	position: relative;
+	margin-bottom: 1rem;
+	backdrop-filter: blur(5px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .featureIcon::before {
