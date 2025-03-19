@@ -3,20 +3,33 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import styles from './page.module.css';
 
 export default function Home() {
+  const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
   const containerRef = useRef(null);
+  const cubeRef = useRef(null);
+
+  // Mouse position state
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
 
+  // Scroll-based animations
   const cubeRotateX = useTransform(scrollYProgress, [0, 1], [0, 360]);
   const cubeRotateY = useTransform(scrollYProgress, [0, 1], [0, 360]);
   const cubeScale = useTransform(scrollYProgress, [0, 0.5, 1], [1, 1.5, 0.8]);
+
+  // Mouse-based transformations - with reduced sensitivity
+  const [mouseRotateX, setMouseRotateX] = useState(0);
+  const [mouseRotateY, setMouseRotateY] = useState(0);
+  const [mouseHovering, setMouseHovering] = useState(false);
 
   const [participants, setParticipants] = useState(0);
   const [prizePool, setPrizePool] = useState(0);
@@ -26,6 +39,38 @@ export default function Home() {
     minutes: 35,
     seconds: 22
   });
+
+  const handleSignupNavigation = () => {
+    router.push('/signup');
+  };
+
+  // Handle mouse movement over the cube with gentler effect
+  const handleMouseMove = (e) => {
+    if (!cubeRef.current) return;
+
+    // Get cube element dimensions and position
+    const rect = cubeRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    // Calculate mouse position relative to center of cube
+    const mouseX = e.clientX - centerX;
+    const mouseY = e.clientY - centerY;
+
+    // Convert to rotation values with much lower sensitivity (5 degrees max)
+    const rotateY = mouseX / (rect.width / 2) * 10;
+    const rotateX = -mouseY / (rect.height / 2) * 10;
+
+    // Apply smooth lerping for even gentler movement
+    setMouseRotateX(prev => prev * 0.8 + rotateX * 0.2);
+    setMouseRotateY(prev => prev * 0.8 + rotateY * 0.2);
+
+    // Gentle movement of the glow
+    setMousePosition({
+      x: mouseX * 0.01,
+      y: mouseY * 0.01
+    });
+  };
 
   useEffect(() => {
     // Simulate data loading
@@ -102,8 +147,9 @@ export default function Home() {
             className={styles.connectBtn}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleSignupNavigation}
           >
-            Connect Wallet
+            Get Started
           </motion.button>
         </div>
       </nav>
@@ -141,6 +187,7 @@ export default function Home() {
                 className={styles.primaryBtn}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={handleSignupNavigation}
               >
                 Enter Current Draw
               </motion.button>
@@ -159,13 +206,31 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.5 }}
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setMouseHovering(true)}
+            onMouseLeave={() => {
+              setMouseHovering(false);
+              // Gentle reset with a small animation
+              const resetInterval = setInterval(() => {
+                setMouseRotateX(prev => prev * 0.9);
+                setMouseRotateY(prev => prev * 0.9);
+
+                if (Math.abs(mouseRotateX) < 0.1 && Math.abs(mouseRotateY) < 0.1) {
+                  setMouseRotateX(0);
+                  setMouseRotateY(0);
+                  clearInterval(resetInterval);
+                }
+              }, 16);
+            }}
           >
             <motion.div
               className={styles.cubeContainer}
+              ref={cubeRef}
               style={{
-                rotateX: cubeRotateX,
-                rotateY: cubeRotateY,
-                scale: cubeScale
+                rotateX: mouseHovering ? mouseRotateX : cubeRotateX,
+                rotateY: mouseHovering ? mouseRotateY : cubeRotateY,
+                scale: mouseHovering ? 1.05 : cubeScale, // Reduced scale change
+                transition: mouseHovering ? "all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)" : "all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
               }}
             >
               <div className={styles.cube}>
@@ -176,11 +241,36 @@ export default function Home() {
                 <div className={`${styles.cubeFace} ${styles.top}`}></div>
                 <div className={`${styles.cubeFace} ${styles.bottom}`}></div>
               </div>
-              <div className={styles.cubeGlow}></div>
+              <div
+                className={styles.cubeGlow}
+                style={{
+                  opacity: mouseHovering ? 0.65 : 0.6, // Very subtle opacity change
+                  transform: mouseHovering ? `translate(${mousePosition.x}px, ${mousePosition.y}px)` : 'none',
+                  transition: "opacity 1s ease"
+                }}
+              ></div>
               <div className={styles.cubeRings}>
-                <div className={`${styles.ring} ${styles.ring1}`}></div>
-                <div className={`${styles.ring} ${styles.ring2}`}></div>
-                <div className={`${styles.ring} ${styles.ring3}`}></div>
+                <div
+                  className={`${styles.ring} ${styles.ring1}`}
+                  style={{
+                    transform: mouseHovering ? `rotateX(${mouseRotateX * 0.2}deg) rotateY(${mouseRotateY * 0.2}deg)` : 'none',
+                    transition: "transform 0.8s ease"
+                  }}
+                ></div>
+                <div
+                  className={`${styles.ring} ${styles.ring2}`}
+                  style={{
+                    transform: mouseHovering ? `rotateX(${mouseRotateX * 0.1}deg) rotateY(${mouseRotateY * 0.1}deg)` : 'none',
+                    transition: "transform 0.8s ease"
+                  }}
+                ></div>
+                <div
+                  className={`${styles.ring} ${styles.ring3}`}
+                  style={{
+                    transform: mouseHovering ? `rotateX(${mouseRotateX * 0.05}deg) rotateY(${mouseRotateY * 0.05}deg)` : 'none',
+                    transition: "transform 0.8s ease"
+                  }}
+                ></div>
               </div>
             </motion.div>
           </motion.div>
@@ -416,6 +506,7 @@ export default function Home() {
               className={`${styles.primaryBtn} ${styles.ctaBtn}`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleSignupNavigation}
             >
               Enter Current Draw
             </motion.button>
