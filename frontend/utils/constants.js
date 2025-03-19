@@ -1,5 +1,5 @@
 export const contractAddress = "0xc79a89D14b237b879DF0D68674FADA45eeCd0428";
-export const apiUrl = "http://localhost:5000"
+export const apiUrl = "https://name-50025233523.development.catalystappsail.in"
 export const contractAbi = [
 	{
 		"inputs": [
