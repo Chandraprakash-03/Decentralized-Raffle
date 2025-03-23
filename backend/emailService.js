@@ -1,47 +1,48 @@
 const nodemailer = require("nodemailer");
+const fs = require("fs");
 const path = require("path");
-
-async function loadHandlebars() {
-    const { default: hbs } = await import("nodemailer-express-handlebars");
-    return hbs;
-}
+const handlebars = require("handlebars");
 
 async function setupTransporter() {
-    const hbs = await loadHandlebars();
-
-    const transporter = nodemailer.createTransport({
+    return nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT,
+        secure: true,
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS
         }
     });
-
-    transporter.use("compile", hbs({
-        viewEngine: {
-            extName: ".hbs",
-            partialsDir: path.join(__dirname, "templates"),
-            defaultLayout: false,
-        },
-        viewPath: path.join(__dirname, "templates"),
-        extName: ".hbs"
-    }));
-
-    return transporter;
 }
 
-async function sendEmail(to, subject, template, context) {
+// Function to load and compile Handlebars template
+function loadTemplate(templateName, context) {
+    const templatePath = path.join(__dirname, "templates", `${templateName}.hbs`);
+
+    try {
+        const templateSource = fs.readFileSync(templatePath, "utf8");
+        const compiledTemplate = handlebars.compile(templateSource);
+        return compiledTemplate(context);
+    } catch (error) {
+        console.error(`Error loading template ${templateName}:`, error);
+        return "";
+    }
+}
+
+// Function to send an email
+async function sendEmail(to, subject, templateName, context) {
     try {
         const transporter = await setupTransporter();
+        const htmlContent = loadTemplate(templateName, context);
+
         await transporter.sendMail({
-            from: `"CipherDraw No-Reply" <cipherdraw@gmail.com>`,
-            replyTo: "cipherdraw@gmail.com",
+            from: `"CipherDraw No-Reply" <${process.env.EMAIL_USER}>`,
+            replyTo: process.env.EMAIL_USER,
             to,
             subject,
-            template,
-            context
+            html: htmlContent
         });
+
         console.log(`Email sent to ${to}`);
     } catch (error) {
         console.error("Email error:", error);

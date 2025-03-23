@@ -6,7 +6,14 @@ const { Pool } = require("pg");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+const corsOptions = {
+    origin: "*",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization"
+}
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -21,7 +28,7 @@ let raffleState = {
     endTime: null,
     participants: 0,
     raffleId: null,
-    amount: 0
+    prizePool: 0
 };
 
 // Test DB Connection
@@ -44,7 +51,7 @@ const initializeRaffleState = async () => {
                 endTime: activeRaffle.end_time,
                 participants: activeRaffle.participants,
                 raffleId: activeRaffle.id,
-                amount: activeRaffle.amount
+                prizePool: activeRaffle.amount
             };
             console.log("Initialized active raffle:", raffleState);
         } else {
@@ -97,7 +104,8 @@ const createOrResetRaffle = async (participants = 1, amount = 0) => {
                     isActive: false,
                     endTime: null,
                     participants: 0,
-                    raffleId: null
+                    raffleId: null,
+                    prizePool: 0
                 };
 
                 console.log("Raffle ended automatically");
@@ -118,15 +126,23 @@ const createOrResetRaffle = async (participants = 1, amount = 0) => {
 
 // Check if a raffle needs to be created
 const checkAndCreateRaffle = async (amount = 0) => {
+    // Convert amount to a number to ensure proper addition
+    const numericAmount = Number(amount);
+
     if (!raffleState.isActive) {
-        return await createOrResetRaffle(1, amount);
+        return await createOrResetRaffle(1, numericAmount);
     } else {
-        // Update participants count
+        // Update participants count and properly add to prize pool
+        const updatedPrizePool = raffleState.prizePool + numericAmount;
+
         await pool.query(
-            "UPDATE raffles SET participants = $1 WHERE id = $2",
-            [raffleState.participants + 1, raffleState.raffleId]
+            "UPDATE raffles SET participants = $1, amount = $2 WHERE id = $3",
+            [raffleState.participants + 1, updatedPrizePool, raffleState.raffleId]
         );
+
         raffleState.participants += 1;
+        raffleState.prizePool = updatedPrizePool;
+
         return raffleState.raffleId;
     }
 };
@@ -202,7 +218,7 @@ app.post("/log-transaction", async (req, res) => {
         // Create or update raffle if this is an entry transaction
         let raffleId = null;
         if (type === "entry") {
-            raffleId = await checkAndCreateRaffle(amount); // Pass the amount to checkAndCreateRaffle
+            raffleId = await checkAndCreateRaffle(amount);
         }
 
         // Insert transaction
@@ -259,16 +275,17 @@ app.post("/declare-winner", async (req, res) => {
     try {
         const { raffle_id, user_id, prize_amount } = req.body;
 
-        const userResult = await pool.query("SELECT email FROM users WHERE id = $1", [user_id]);
+        const userResult = await pool.query("SELECT id, email FROM users WHERE wallet_address = $1", [user_id]);
         if (userResult.rowCount === 0) {
             return res.status(404).json({ error: "User not found" });
         }
 
+        const id = userResult.rows[0].id;
         const email = userResult.rows[0].email;
 
         await pool.query(
             "INSERT INTO winners (raffle_id, user_id, prize_amount) VALUES ($1, $2, $3)",
-            [raffle_id, user_id, prize_amount]
+            [raffle_id, id, prize_amount]
         );
 
         sendEmail(email, "🏆 Congratulations! You Won!", "winner-notification", {

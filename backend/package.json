@@ -10,11 +10,15 @@
 	"license": "ISC",
 	"description": "",
 	"dependencies": {
+		"@sendgrid/mail": "^8.1.4",
 		"cors": "^2.8.5",
 		"dotenv": "^16.4.7",
 		"express": "^4.21.2",
+		"fs": "^0.0.1-security",
+		"handlebars": "^4.7.8",
 		"nodemailer": "^6.10.0",
 		"nodemailer-express-handlebars": "^7.0.0",
+		"path": "^0.12.7",
 		"pg": "^8.13.3"
 	}
 }
