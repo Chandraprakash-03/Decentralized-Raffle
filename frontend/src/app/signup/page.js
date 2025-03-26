@@ -16,16 +16,12 @@ export default function Signup() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    console.log(apiUrl)
-    // Handle Google Signup
     const handleGoogleSignup = async () => {
         try {
             setIsLoading(true);
             const userCredential = await signInWithGoogle();
             const user = userCredential.email;
-            // console.log(userCredential)
 
-            // Send user data to backend
             await fetch(`${apiUrl}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -33,7 +29,7 @@ export default function Signup() {
             });
 
             toast.success("Signup Successful!");
-            router.push("/raffle"); // Redirect to wallet connection page
+            router.push("/raffle");
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -55,7 +51,6 @@ export default function Signup() {
 
             console.log(userCredential);
 
-            // Send user data to the backend
             await fetch(`${apiUrl}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -63,7 +58,7 @@ export default function Signup() {
             });
 
             toast.success("Signup Successful!");
-            router.push("/raffle"); // Redirect to wallet connection page
+            router.push("/raffle");
         } catch (error) {
             if (error.code === "auth/email-already-in-use") {
                 toast.error("Email is already in use. Try logging in.");
@@ -124,13 +119,11 @@ export default function Signup() {
 
                 <div className={styles.orDivider}>Or</div>
 
-                {/* Google Sign-Up Button */}
                 <button className={styles.googleBtn} onClick={handleGoogleSignup} disabled={isLoading}>
                     <img src="/google.svg" alt="Google" />
                     {isLoading ? "Processing..." : "Continue with Google"}
                 </button>
 
-                {/* Buttons */}
                 <div className={`${styles.buttonContainer} ${step === 2 ? styles.twoButtons : ""}`}>
                     {step === 2 && (
                         <motion.button

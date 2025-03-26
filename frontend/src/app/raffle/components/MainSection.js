@@ -6,7 +6,7 @@ import { contractAddress, contractAbi, apiUrl } from "../../../../utils/constant
 import styles from "../styles/mainSection.module.css";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import { auth } from "../../../../utils/firebase"; // Firebase Auth
+import { auth } from "../../../../utils/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import AnalyticsSection from "./AnalyticsSection";
 
@@ -26,7 +26,6 @@ const Timer = memo(({ seconds }) => {
     );
 });
 
-// Home Section
 const HomeSection = memo(({ timeLeft, prizePool, entryFee, participants, walletAddress, isLoading, onConnect, onEnterRaffle }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -105,7 +104,6 @@ const WinnersSection = memo(({ winners }) => (
     </motion.div>
 ));
 
-// Profile Section with Logout Button
 const ProfileSection = memo(({ walletAddress, transactions = [], onLogout, userEmail }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -142,7 +140,7 @@ const ProfileSection = memo(({ walletAddress, transactions = [], onLogout, userE
                 )}
             </div>
 
-            <button className={styles.logoutButton} onClick={onLogout}>
+            <button className={styles.connectButton} onClick={onLogout}>
                 Logout
             </button>
         </div>
@@ -150,7 +148,7 @@ const ProfileSection = memo(({ walletAddress, transactions = [], onLogout, userE
 ));
 
 export default function MainSection({ activeSection }) {
-    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes default
+    const [timeLeft, setTimeLeft] = useState(300);
     const [walletAddress, setWalletAddress] = useState("");
     const [prizePool, setPrizePool] = useState("0.00 ETH");
     const [entryFee, setEntryFee] = useState("0.01 ETH");
@@ -167,10 +165,9 @@ export default function MainSection({ activeSection }) {
     const isTimerInitialized = useRef(false);
     const isDataFetching = useRef(false);
     const isWinnerBeingDeclared = useRef(false);
-    const raffleIdRef = useRef(null); // Ref to store raffle ID
-    const activeRaffleRef = useRef(false); // Add ref to track active raffle state
+    const raffleIdRef = useRef(null);
+    const activeRaffleRef = useRef(false);
 
-    // Fetch Contract Data
     const fetchContractData = useCallback(async () => {
         if (isDataFetching.current) return;
         isDataFetching.current = true;
@@ -193,7 +190,6 @@ export default function MainSection({ activeSection }) {
             const participantCount = await contract.getNumberOfPlayers();
             setParticipants(Number(participantCount));
 
-            // Fetch raffle status from backend
             await fetchRaffleStatus();
         } catch (error) {
             console.error("Error fetching contract data:", error);
@@ -202,98 +198,6 @@ export default function MainSection({ activeSection }) {
         }
     }, []);
 
-    // const declareWinner = useCallback(async (raffleIdToUse) => {
-    //     // Prevent multiple executions
-    //     if (isWinnerBeingDeclared.current) {
-    //         console.log("Winner declaration already in progress");
-    //         return;
-    //     }
-
-    //     isWinnerBeingDeclared.current = true;
-    //     console.log("Starting winner declaration process");
-
-    //     try {
-    //         // Use the provided raffle ID, or fall back to refs/state
-    //         const raffleId = raffleIdToUse || raffleIdRef.current || currentRaffleId;
-
-    //         // Check if we have a valid raffle ID
-    //         if (!raffleId) {
-    //             console.error("No raffle ID available for winner declaration");
-    //             toast.error("No active raffle found");
-    //             isWinnerBeingDeclared.current = false;
-    //             return;
-    //         }
-
-    //         console.log("Declaring winner for raffle ID:", raffleId);
-
-    //         // Get winner information from the smart contract
-    //         if (!window.ethereum) {
-    //             toast.error("Ethereum provider not found");
-    //             isWinnerBeingDeclared.current = false;
-    //             return;
-    //         }
-
-    //         const provider = new ethers.BrowserProvider(window.ethereum);
-    //         const contract = new ethers.Contract(contractAddress, contractAbi, provider);
-
-    //         // Get the number of participants
-    //         const numPlayers = await contract.getNumberOfPlayers();
-    //         if (Number(numPlayers) === 0) {
-    //             console.log("No participants in this raffle");
-    //             toast.info("No participants in this raffle. Starting a new one.");
-    //             // Reset and start a new raffle cycle
-    //             setActiveRaffle(false);
-    //             activeRaffleRef.current = false;
-    //             isWinnerBeingDeclared.current = false;
-    //             fetchContractData();
-    //             return;
-    //         }
-
-    //         // Get the winner directly from the contract
-    //         const winner = await contract.getRecentWinner();
-    //         console.log("Winner address:", winner);
-
-    //         // Get the prize amount
-    //         const prizeAmount = await contract.getPrizePool();
-    //         const formattedPrizeAmount = ethers.formatEther(prizeAmount);
-    //         console.log("Prize amount:", formattedPrizeAmount);
-
-    //         // Send winner data to API
-    //         const response = await fetch(`${apiUrl}/declare-winner`, {
-    //             method: "POST",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify({
-    //                 raffle_id: raffleId,
-    //                 user_id: winner,
-    //                 prize_amount: formattedPrizeAmount
-    //             }),
-    //         });
-
-    //         const data = await response.json();
-    //         if (response.ok) {
-    //             toast.success("Winner has been declared!");
-    //             console.log("Winner declared successfully");
-    //             // Reset raffle state
-    //             setActiveRaffle(false);
-    //             activeRaffleRef.current = false;
-    //             setCurrentRaffleId(null);
-    //             raffleIdRef.current = null;
-    //         } else {
-    //             toast.error(data.error || "Failed to declare winner");
-    //             console.error("Failed to declare winner:", data.error);
-    //         }
-
-    //         // Refresh contract data
-    //         fetchContractData();
-    //     } catch (error) {
-    //         console.error("Error declaring winner:", error);
-    //         toast.error("Error declaring winner. Check console for details.");
-    //     } finally {
-    //         isWinnerBeingDeclared.current = false;
-    //     }
-    // }, [currentRaffleId, fetchContractData]);
-
-    // Fetch raffle status and set up timer
     const fetchRaffleStatus = useCallback(async () => {
         try {
             const response = await fetch(`${apiUrl}/raffle-status`);
@@ -309,11 +213,9 @@ export default function MainSection({ activeSection }) {
             if (data && typeof data === 'object') {
                 const { endTime, isActive, participants, prizePool, raffleId } = data;
 
-                // Update active raffle state in both state and ref
                 setActiveRaffle(!!isActive);
                 activeRaffleRef.current = !!isActive;
 
-                // Store raffle ID in both state and ref
                 if (raffleId) {
                     setCurrentRaffleId(raffleId);
                     raffleIdRef.current = raffleId;
@@ -331,17 +233,13 @@ export default function MainSection({ activeSection }) {
                     const endTimeDate = new Date(endTime);
                     const now = new Date();
 
-                    // Check if the end time has already passed
+
                     if (endTimeDate <= now && raffleId) {
                         console.log("Raffle end time has already passed, declaring winner immediately");
-                        // If the raffle should have ended already, declare winner immediately
-                        // declareWinner(raffleId);
                     } else {
-                        // Otherwise start the timer
                         startTimer(endTimeDate, raffleId);
                     }
                 } else {
-                    // If no active raffle, maintain the default time
                     if (!isTimerInitialized.current) {
                         setTimeLeft(300);
                         isTimerInitialized.current = true;
@@ -352,7 +250,6 @@ export default function MainSection({ activeSection }) {
             }
         } catch (error) {
             console.error("Error fetching raffle status:", error);
-            // Keep the current time if there's an error
             if (!isTimerInitialized.current) {
                 setTimeLeft(300);
                 isTimerInitialized.current = true;
@@ -361,51 +258,38 @@ export default function MainSection({ activeSection }) {
     },);
 
     const startTimer = useCallback((endTime, raffleId) => {
-        // Clear any existing timer
         if (timerRef.current) {
             clearInterval(timerRef.current);
         }
 
-        // Store the raffle ID in the ref
         if (raffleId) {
             raffleIdRef.current = raffleId;
             console.log("Timer started for raffle ID:", raffleId);
         }
 
-        // Calculate initial time
         const now = new Date();
         const secondsLeft = Math.max(0, Math.floor((endTime - now) / 1000));
         setTimeLeft(secondsLeft);
 
-        // Set up the timer
         timerRef.current = setInterval(async () => {
             const now = new Date();
             const secondsLeft = Math.max(0, Math.floor((endTime - now) / 1000));
             setTimeLeft(secondsLeft);
 
             if (secondsLeft <= 0) {
-                // Clear the interval immediately to prevent multiple calls
                 clearInterval(timerRef.current);
                 console.log("Timer reached zero for raffle ID:", raffleIdRef.current);
 
                 try {
-                    // Direct call to smart contract when timer ends
                     if (window.ethereum && raffleIdRef.current) {
                         const provider = new ethers.BrowserProvider(window.ethereum);
                         const contract = new ethers.Contract(contractAddress, contractAbi, provider);
 
-                        // Get the winner directly from the contract
                         const winner = await contract.getRecentWinner();
                         console.log("Winner address:", winner);
 
-                        // Get the prize amount
-
-                        // const formattedPrizeAmount = ethers.formatEther(prizePool);
-                        // console.log("Prize amount:", formattedPrizeAmount);
                         let numericValue = parseFloat(rafflePrizePool);
                         console.log(numericValue);
-
-                        // Send winner data to API
                         const response = await fetch(`${apiUrl}/declare-winner`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -425,7 +309,6 @@ export default function MainSection({ activeSection }) {
                             console.error("Failed to declare winner:", data.error);
                         }
 
-                        // Refresh contract data
                         fetchContractData();
                     }
                 } catch (error) {
@@ -436,7 +319,6 @@ export default function MainSection({ activeSection }) {
         }, 1000);
     }, [fetchContractData]);
 
-    // Fetch Firebase User
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUserEmail(user ? user.email : "");
@@ -445,16 +327,13 @@ export default function MainSection({ activeSection }) {
         return () => unsubscribe();
     }, []);
 
-    // Initial data fetch
+
     useEffect(() => {
-        // Set initial default time
         setTimeLeft(300);
         isTimerInitialized.current = true;
 
-        // Fetch contract data and set up timer
         fetchContractData();
 
-        // Clean up timer on unmount
         return () => {
             if (timerRef.current) {
                 clearInterval(timerRef.current);
@@ -462,7 +341,6 @@ export default function MainSection({ activeSection }) {
         };
     }, [fetchContractData]);
 
-    // Handle Wallet Connection
     const handleConnectWallet = useCallback(async () => {
         try {
             const wallet = await connectWallet();
@@ -473,13 +351,11 @@ export default function MainSection({ activeSection }) {
 
             setWalletAddress(wallet.address);
 
-            // Ensure user is logged in
             if (!userEmail) {
                 toast.error("Please log in first!");
                 return;
             }
 
-            // Send wallet address to backend for mapping
             const res = await fetch(`${apiUrl}/map-wallet`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -499,7 +375,6 @@ export default function MainSection({ activeSection }) {
         }
     }, [userEmail, fetchContractData]);
 
-    // Handle Enter Raffle
     const handleEnterRaffle = useCallback(async () => {
         try {
             if (!walletAddress) {
@@ -516,7 +391,6 @@ export default function MainSection({ activeSection }) {
             const tx = await contract.enterRaffle({ value: entranceFee });
             await tx.wait();
 
-            // Send transaction details to backend
             await fetch(`${apiUrl}/log-transaction`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -530,7 +404,6 @@ export default function MainSection({ activeSection }) {
 
             toast.success("You have successfully entered the raffle!");
 
-            // Refresh contract data and timer
             fetchContractData();
         } catch (error) {
             console.error("Transaction error:", error);
@@ -546,7 +419,6 @@ export default function MainSection({ activeSection }) {
             const data = await response.json();
 
             if (response.ok) {
-                // Transform the data to match the expected format in WinnersSection
                 const formattedWinners = data.winners.map(winner => ({
                     name: winner.email || winner.wallet_address.slice(0, 6) + '...' + winner.wallet_address.slice(-4),
                     amount: winner.prize_amount + ' ETH',
@@ -564,14 +436,12 @@ export default function MainSection({ activeSection }) {
         }
     }, []);
 
-    // Add an effect to fetch winners when the section changes to "winners"
     useEffect(() => {
         if (activeSection === "winners") {
             fetchWinners();
         }
     }, [activeSection, fetchWinners]);
 
-    // Fetch transactions when wallet address changes
     useEffect(() => {
         if (!walletAddress) return;
 
@@ -593,7 +463,6 @@ export default function MainSection({ activeSection }) {
         fetchTransactions();
     }, [walletAddress]);
 
-    // Add effect to monitor raffle ID and active raffle status for debugging
     useEffect(() => {
         console.log("Current raffle state updated:", {
             raffleId: currentRaffleId,
@@ -601,7 +470,6 @@ export default function MainSection({ activeSection }) {
         });
     }, [currentRaffleId, activeRaffle]);
 
-    // Handle Logout
     const handleLogout = async () => {
         try {
             await signOut(auth);
