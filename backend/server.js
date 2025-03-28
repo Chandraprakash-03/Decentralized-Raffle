@@ -7,13 +7,7 @@ const { Pool } = require("pg");
 const app = express();
 app.use(express.json());
 
-const corsOptions = {
-    origin: "https://decentralized-raffle.onrender.com",
-    methods: "GET,POST,PUT,DELETE",
-    allowedHeaders: "Content-Type,Authorization"
-}
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use(cors());
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
